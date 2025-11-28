@@ -1,10 +1,21 @@
+/*
+*
+*   RX sketch per Heltec LORAWAN v3
+*   Riceve un segnale LoRa con medesime caratteristiche 
+*   Nessun protocollo, solo invio/ricezione via hardware punto-punto
+*
+*   https://github.com/bleish-git/LoRABLE/ - MIT License
+*   bleish@gmail.com - 2025
+*/
+
 #include "LoRaWan_APP.h"
 #include "Arduino.h"
 
-// Display
-// For a connection via I2C using the Arduino Wire include:
+// Display OLED integrato
 #include <Wire.h>               
 #include "HT_SSD1306Wire.h"
+
+//Eventuale logo da mostrare all'avvio
 //#include "images.h"
 
 static SSD1306Wire  display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, RST_OLED); // addr , freq , i2c group , resolution , rst
@@ -30,18 +41,21 @@ static SSD1306Wire  display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, R
 
 
 #define RX_TIMEOUT_VALUE                            1000
-#define BUFFER_SIZE                                 30 // Define the payload size here
+#define BUFFER_SIZE                                 30 // payload size 
 
 char txpacket[BUFFER_SIZE];
 char rxpacket[BUFFER_SIZE];
+
+int16_t rssi,rxSize;
 
 double txNumber;
 
 bool lora_idle=true;
 
 static RadioEvents_t RadioEvents;
-void OnTxDone( void );
-void OnTxTimeout( void );
+
+void drawText(String);
+void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr );
 
 void setup() {
     Serial.begin(115200);
@@ -50,15 +64,17 @@ void setup() {
     VextON();
     delay(100);
 
-    // Initialising display.
+    // Inizializzazione display.
     display.init();
     display.setFont(ArialMT_Plain_10);
+    void drawText();
+    delay(5000);
 	
     txNumber=0;
-
-    RadioEvents.TxDone = OnTxDone;
-    RadioEvents.TxTimeout = OnTxTimeout;
+    rssi=0;
+    rxSize=0;
     
+    RadioEvents.RxDone = OnRxDone;
     Radio.Init( &RadioEvents );
     Radio.SetChannel( RF_FREQUENCY );
     Radio.SetTxConfig( MODEM_LORA, TX_OUTPUT_POWER, 0, LORA_BANDWIDTH,
@@ -68,7 +84,7 @@ void setup() {
    }
 
 
-void drawText(String msg="Ciao.") {
+void drawText(String msg="Ciao.\n\nRX mode...") {
     display.setTextAlignment(TEXT_ALIGN_LEFT);
     display.setFont(ArialMT_Plain_10);
     display.drawString(0, 0, msg);
@@ -94,32 +110,29 @@ void VextOFF(void) //Vext default OFF
 void loop()
 {
   display.clear();
-  
-    
+  Radio.IrqProcess( );
+
+  delay(1000);
+
 	if(lora_idle == true)
 	{
-    delay(1000);
-		txNumber += 0.01;
-		sprintf(txpacket,"Hello world number %0.2f",txNumber);  //start a package
-   
-		Serial.printf("\r\nsending packet \"%s\" , length %d\r\n",txpacket, strlen(txpacket));
+    lora_idle = false;
+    
+		Serial.println("Rx mode...");
     drawText(txpacket);
 
-		Radio.Send( (uint8_t *)txpacket, strlen(txpacket) ); //send the package out	
-    lora_idle = false;
+		Radio.Rx(0);
 	}
-  Radio.IrqProcess( );
+  
 }
 
-void OnTxDone( void )
+void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
 {
-	Serial.println("TX done......");
-	lora_idle = true;
-}
-
-void OnTxTimeout( void )
-{
+    rssi=rssi;
+    rxSize=size;
+    memcpy(rxpacket, payload, size );
+    rxpacket[size]='\0';
     Radio.Sleep( );
-    Serial.println("TX Timeout......");
+    Serial.printf("\r\nreceived packet \"%s\" with rssi %d , length %d\r\n",rxpacket,rssi,rxSize);
     lora_idle = true;
 }
