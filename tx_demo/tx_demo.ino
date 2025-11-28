@@ -1,6 +1,7 @@
 /*
 *
 *   TX sketch per Heltec LORAWAN v3
+*   Invio pacchetti senza nessun protocollo via hardware punto-punto
 *
 *   https://github.com/bleish-git/LoRABLE/ - MIT License
 *   bleish@gmail.com - 2025
@@ -51,7 +52,7 @@ bool lora_idle=true;
 static RadioEvents_t RadioEvents;
 void OnTxDone( void );
 void OnTxTimeout( void );
-void drawText(String);
+void drawText(String msg="Ciao.");
 
 void setup() {
     Serial.begin(115200);
@@ -62,9 +63,11 @@ void setup() {
 
     // Inizializzazione display.
     display.init();
-    display.setFont(ArialMT_Plain_10);
-    void drawText();
-	
+    display.setFont(ArialMT_Plain_24);
+    drawText("\nModulo TX\nCiao...");
+    delay(7000);
+
+
     txNumber=0;
 
     RadioEvents.TxDone = OnTxDone;
@@ -79,7 +82,7 @@ void setup() {
    }
 
 
-void drawText(String msg="Ciao.") {
+void drawText(String msg) {
     display.setTextAlignment(TEXT_ALIGN_LEFT);
     display.setFont(ArialMT_Plain_10);
     display.drawString(0, 0, msg);
@@ -109,9 +112,9 @@ void loop()
     
 	if(lora_idle == true)
 	{
-    delay(1000);
+    delay(3000);
 		txNumber += 0.01;
-		sprintf(txpacket,"Hello world number %0.2f",txNumber);  //prepara un pacchetto
+		sprintf(txpacket,"\nHello world number %0.2f",txNumber);  //prepara un pacchetto
 
 		Serial.printf("\r\nsending packet \"%s\" , length %d\r\n",txpacket, strlen(txpacket));
     drawText(txpacket);
