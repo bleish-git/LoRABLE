@@ -122,12 +122,21 @@ void loop()
 
 void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
 {
+    char displayBuf[128];
+    
     rssi=rssi;
     rxSize=size;
     memcpy(rxpacket, payload, size );
     rxpacket[size]='\0';
+
     Radio.Sleep( );
+
     Serial.printf("\r\nreceived packet \"%s\" with rssi %d , length %d\r\n",rxpacket,rssi,rxSize);
-    drawText(rxpacket);
+
+    snprintf(displayBuf, sizeof(displayBuf),
+             "%s\nRSSI: %d\nSNR: %d",
+             rxpacket, rssi, snr);
+    drawText(displayBuf);
+
     lora_idle = true;
 }
