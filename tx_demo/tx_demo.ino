@@ -19,11 +19,22 @@
 
 static SSD1306Wire  display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, RST_OLED); // addr , freq , i2c group , resolution , rst
 
+//LoRa Max Range, low speed
+#define RF_FREQUENCY                                865000000
+#define TX_OUTPUT_POWER                             14       // max legale EU
+#define LORA_BANDWIDTH                              0        // 125 kHz
+#define LORA_SPREADING_FACTOR                       12       // SF12
+#define LORA_CODINGRATE                             4        // 4/8
+#define LORA_PREAMBLE_LENGTH                        12
+#define LORA_SYMBOL_TIMEOUT                         0
+#define LORA_FIX_LENGTH_PAYLOAD_ON                  false
+#define LORA_IQ_INVERSION_ON                        false
 
+
+/*
+//LoRa default TX configuration
 #define RF_FREQUENCY                                865000000 // Hz
-
 #define TX_OUTPUT_POWER                             5        // dBm
-
 #define LORA_BANDWIDTH                              0         // [0: 125 kHz,
                                                               //  1: 250 kHz,
                                                               //  2: 500 kHz,
@@ -37,7 +48,7 @@ static SSD1306Wire  display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, R
 #define LORA_SYMBOL_TIMEOUT                         0         // Symbols
 #define LORA_FIX_LENGTH_PAYLOAD_ON                  false
 #define LORA_IQ_INVERSION_ON                        false
-
+*/
 
 #define RX_TIMEOUT_VALUE                            1000
 #define BUFFER_SIZE                                 30 // payload size 
@@ -64,7 +75,7 @@ void setup() {
     // Inizializzazione display.
     display.init();
     display.setFont(ArialMT_Plain_24);
-    drawText("\nModulo TX\nCiao...");
+    drawText("\nModulo TX\nCiao.\nAvvio in corso...");
     delay(7000);
 
 
