@@ -57,6 +57,9 @@ static RadioEvents_t RadioEvents;
 void drawText(String);
 void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr );
 
+double lastRxNumber = -1.0;   // ultimo numero ricevuto
+uint32_t lostMessages = 0;   // messaggi persi
+
 void setup() {
     Serial.begin(115200);
     Mcu.begin(HELTEC_BOARD,SLOW_CLK_TPYE);
@@ -122,20 +125,41 @@ void loop()
 
 void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
 {
-    char displayBuf[128];
-    
-    rssi=rssi;
-    rxSize=size;
-    memcpy(rxpacket, payload, size );
-    rxpacket[size]='\0';
+    char displayBuf[160];
+    double rxNumber = 0.0;
 
-    Radio.Sleep( );
+    rxSize = size;
+    memcpy(rxpacket, payload, size);
+    rxpacket[size] = '\0';
 
-    Serial.printf("\r\nreceived packet \"%s\" with rssi %d , length %d\r\n",rxpacket,rssi,rxSize);
+    Radio.Sleep();
+
+    // Estrazione del numero dal messaggio
+    // Formato atteso: "Hello world number %f"
+    if (sscanf(rxpacket, "Hello world number %lf", &rxNumber) == 1)
+    {
+        if (lastRxNumber >= 0)
+        {
+            double diff = rxNumber - lastRxNumber;
+
+            if (diff > 0.011)  // tolleranza floating point
+            {
+                uint32_t missed = (uint32_t)(diff / 0.01) - 1;
+                lostMessages += missed;
+            }
+        }
+        lastRxNumber = rxNumber;
+    }
+
+    Serial.printf(
+        "\r\nRX: \"%s\" | RSSI: %d | SNR: %d | Lost: %lu\r\n",
+        rxpacket, rssi, snr, lostMessages
+    );
 
     snprintf(displayBuf, sizeof(displayBuf),
-             "%s\nRSSI: %d\nSNR: %d",
-             rxpacket, rssi, snr);
+             "%s\nRSSI: %d   -  SNR: %d\nPersi: %lu",
+             rxpacket, rssi, snr, lostMessages);
+
     drawText(displayBuf);
 
     lora_idle = true;

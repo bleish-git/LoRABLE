@@ -107,12 +107,13 @@ void VextOFF(void) //Vext default OFF
 
 void loop()
 {
+  Radio.IrqProcess( );
   display.clear();
   
     
 	if(lora_idle == true)
 	{
-    delay(3000);
+    delay(5000);
 		txNumber += 0.01;
 		sprintf(txpacket,"\nHello world number %0.2f",txNumber);  //prepara un pacchetto
 
@@ -122,7 +123,7 @@ void loop()
 		Radio.Send( (uint8_t *)txpacket, strlen(txpacket) ); //invia il pacchetto	
     lora_idle = false;
 	}
-  Radio.IrqProcess( );
+  
 }
 
 void OnTxDone( void )
